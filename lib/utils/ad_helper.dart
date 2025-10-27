@@ -2,8 +2,6 @@
 import 'dart:io';
 
 class AdHelper {
-
-  // TODO: Replace with your own AdMob ad unit IDs.
   // These are test IDs provided by Google AdMob.
   // https://developers.google.com/admob/flutter/test-ads
 
