@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
 import 'package:timeboxing/screens/add_task_screen.dart';
+import 'package:timeboxing/screens/task_details_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -173,135 +174,144 @@ class _TasksScreenState extends State<TasksScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
       elevation: 2.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        isThreeLine: true,
-        title: Text(
-          task.title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(
-          task.description,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    _formatTimeRange(task.createdAt, task.durationMinutes),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Chip(
-                    label: Text(
-                      _statusLabel(task.status, isArabic),
-                      style: const TextStyle(color: Colors.white),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => TaskDetailsScreen(task: task),
+            ),
+          );
+        },
+        child: ListTile(
+          isThreeLine: true,
+          title: Text(
+            task.title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          subtitle: Text(
+            task.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _formatTimeRange(task.createdAt, task.durationMinutes),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    backgroundColor: _getStatusColor(task.status),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
+                    const SizedBox(height: 4),
+                    Chip(
+                      label: Text(
+                        _statusLabel(task.status, isArabic),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: _getStatusColor(task.status),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  final provider = Provider.of<TaskProvider>(
+                    context,
+                    listen: false,
+                  );
+                  switch (value) {
+                    case 'complete':
+                      await provider.updateTaskStatus(task, TaskStatus.completed);
+                      break;
+                    case 'inprogress':
+                      await provider.updateTaskStatus(
+                        task,
+                        TaskStatus.inProgress,
+                      );
+                      break;
+                    case 'postpone':
+                      await provider.updateTaskStatus(task, TaskStatus.postponed);
+                      break;
+                    case 'delete':
+                      // Capture scaffold messenger and provider so we don't use context after async gaps
+                      final scaffold = ScaffoldMessenger.of(context);
+                      final providerLocal = provider;
+
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Delete task'),
+                          content: const Text(
+                            'Are you sure you want to delete this task?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        // keep a copy for undo
+                        final deletedTask = Task(
+                          title: task.title,
+                          description: task.description,
+                          durationMinutes: task.durationMinutes,
+                          status: task.status,
+                          createdAt: task.createdAt,
+                          executedAt: task.executedAt,
+                        );
+                        await providerLocal.deleteTask(task);
+                        scaffold.hideCurrentSnackBar();
+                        scaffold.showSnackBar(
+                          SnackBar(
+                            content: const Text('Task deleted'),
+                            action: SnackBarAction(
+                              label: 'UNDO',
+                              onPressed: () async {
+                                await providerLocal.addTask(deletedTask);
+                              },
+                            ),
+                          ),
+                        );
+                      }
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'complete',
+                    child: Text(isArabic ? 'تعيين كمكتملة' : 'Mark Completed'),
+                  ),
+                  PopupMenuItem(
+                    value: 'inprogress',
+                    child: Text(isArabic ? 'تعيين قيد التنفيذ' : 'Mark In Progress'),
+                  ),
+                  PopupMenuItem(value: 'postpone', child: Text(isArabic ? 'تأجيل' : 'Postpone')),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(isArabic ? 'حذف' : 'Delete', style: const TextStyle(color: Colors.red)),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            PopupMenuButton<String>(
-              onSelected: (value) async {
-                final provider = Provider.of<TaskProvider>(
-                  context,
-                  listen: false,
-                );
-                switch (value) {
-                  case 'complete':
-                    await provider.updateTaskStatus(task, TaskStatus.completed);
-                    break;
-                  case 'inprogress':
-                    await provider.updateTaskStatus(
-                      task,
-                      TaskStatus.inProgress,
-                    );
-                    break;
-                  case 'postpone':
-                    await provider.updateTaskStatus(task, TaskStatus.postponed);
-                    break;
-                  case 'delete':
-                    // Capture scaffold messenger and provider so we don't use context after async gaps
-                    final scaffold = ScaffoldMessenger.of(context);
-                    final providerLocal = provider;
-
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Delete task'),
-                        content: const Text(
-                          'Are you sure you want to delete this task?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirmed == true) {
-                      // keep a copy for undo
-                      final deletedTask = Task(
-                        title: task.title,
-                        description: task.description,
-                        durationMinutes: task.durationMinutes,
-                        status: task.status,
-                        createdAt: task.createdAt,
-                        executedAt: task.executedAt,
-                      );
-                      await providerLocal.deleteTask(task);
-                      scaffold.hideCurrentSnackBar();
-                      scaffold.showSnackBar(
-                        SnackBar(
-                          content: const Text('Task deleted'),
-                          action: SnackBarAction(
-                            label: 'UNDO',
-                            onPressed: () async {
-                              await providerLocal.addTask(deletedTask);
-                            },
-                          ),
-                        ),
-                      );
-                    }
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'complete',
-                  child: Text(isArabic ? 'تعيين كمكتملة' : 'Mark Completed'),
-                ),
-                PopupMenuItem(
-                  value: 'inprogress',
-                  child: Text(isArabic ? 'تعيين قيد التنفيذ' : 'Mark In Progress'),
-                ),
-                PopupMenuItem(value: 'postpone', child: Text(isArabic ? 'تأجيل' : 'Postpone')),
-                const PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text(isArabic ? 'حذف' : 'Delete', style: const TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
