@@ -1,4 +1,4 @@
-package com.example.timeboxing
+package com.mofarag.timeboxing
 
 import io.flutter.embedding.android.FlutterActivity
 
