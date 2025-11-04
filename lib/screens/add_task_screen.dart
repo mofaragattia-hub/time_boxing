@@ -58,9 +58,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAr = Localizations.localeOf(context).languageCode == 'ar';
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Task'),
+        title: Text(isAr ? 'إضافة مهمة' : 'Add Task'),
         centerTitle: true,
         elevation: 1,
       ),
@@ -83,14 +84,14 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Title',
-                            prefixIcon: Icon(Icons.title),
+                          decoration: InputDecoration(
+                            labelText: isAr ? 'العنوان' : 'Title',
+                            prefixIcon: const Icon(Icons.title),
                             filled: true,
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter a title';
+                              return isAr ? 'يرجى إدخال عنوان' : 'Please enter a title';
                             }
                             return null;
                           },
@@ -100,8 +101,8 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: 'Description',
+                          decoration: InputDecoration(
+                            labelText: isAr ? 'الوصف' : 'Description',
                             prefixIcon: Icon(Icons.description),
                             filled: true,
                           ),
@@ -156,8 +157,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 icon: const Icon(Icons.play_circle_fill),
                                 label: Text(
                                   _startTime == null
-                                      ? 'Pick start time'
-                                      : 'Start: ${_startTime!.format(context)}',
+                                      ? (isAr ? 'اختر وقت البدء' : 'Pick start time')
+                                      : (isAr
+                                          ? 'البدء: ${_startTime!.format(context)}'
+                                          : 'Start: ${_startTime!.format(context)}'),
                                 ),
                               ),
                             ),
@@ -179,8 +182,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 icon: const Icon(Icons.stop_circle),
                                 label: Text(
                                   _endTime == null
-                                      ? 'Pick end time'
-                                      : 'End: ${_endTime!.format(context)}',
+                                      ? (isAr ? 'اختر وقت الانتهاء' : 'Pick end time')
+                                      : (isAr
+                                          ? 'الانتهاء: ${_endTime!.format(context)}'
+                                          : 'End: ${_endTime!.format(context)}'),
                                 ),
                               ),
                             ),
@@ -190,7 +195,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                         Builder(
                           builder: (context) {
                             final info = _startTime == null || _endTime == null
-                                ? 'No time selected'
+                                ? (isAr ? 'لم يتم اختيار وقت' : 'No time selected')
                                 : _formatDurationLabel(context);
                             return Align(
                               alignment: Alignment.centerLeft,
@@ -241,7 +246,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                   await NotificationService()
                                       .scheduleNotification(
                                         scheduledDateTime: startDateTime,
-                                        title: 'Task reminder',
+                                        title: isAr ? 'تذكير بالمهمة' : 'Task reminder',
                                         body: _title,
                                         notificationId: startDateTime
                                             .millisecondsSinceEpoch
@@ -250,8 +255,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 } else {
                                   // Show warning for past times
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Start time is in the past - no notification scheduled'),
+                                    SnackBar(
+                                      content: Text(isAr
+                                          ? 'وقت البدء في الماضي - لن يتم جدولة إشعار'
+                                          : 'Start time is in the past - no notification scheduled'),
                                       backgroundColor: Colors.orange,
                                     ),
                                   );
@@ -263,7 +270,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                               }
                             },
                             icon: const Icon(Icons.add_task),
-                            label: const Text('Add Task'),
+                            label: Text(isAr ? 'إضافة مهمة' : 'Add Task'),
                           ),
                         ),
                       ],
@@ -279,9 +286,10 @@ class AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   bool _validateTimes(BuildContext context) {
+    final bool isAr = Localizations.localeOf(context).languageCode == 'ar';
     if (_startTime == null || _endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select start and end times')),
+        SnackBar(content: Text(isAr ? 'يرجى اختيار وقتي البدء والانتهاء' : 'Please select start and end times')),
       );
       return false;
     }
@@ -289,7 +297,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     final end = _mergeDateAndTime(_selectedDate, _endTime!);
     if (!end.isAfter(start)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('End time must be after start time')),
+        SnackBar(content: Text(isAr ? 'يجب أن يكون وقت الانتهاء بعد وقت البدء' : 'End time must be after start time')),
       );
       return false;
     }
@@ -302,9 +310,12 @@ class AddTaskScreenState extends State<AddTaskScreen> {
 
   String _formatDurationLabel(BuildContext context) {
     if (_startTime == null || _endTime == null) return '';
+    final bool isAr = Localizations.localeOf(context).languageCode == 'ar';
     final start = _mergeDateAndTime(_selectedDate, _startTime!);
     final end = _mergeDateAndTime(_selectedDate, _endTime!);
     final minutes = end.difference(start).inMinutes;
-    return 'From ${_startTime!.format(context)} to ${_endTime!.format(context)} • $minutes min';
+    return isAr
+        ? 'من ${_startTime!.format(context)} إلى ${_endTime!.format(context)} • $minutes دقيقة'
+        : 'From ${_startTime!.format(context)} to ${_endTime!.format(context)} • $minutes min';
   }
 }

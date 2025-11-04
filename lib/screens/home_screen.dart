@@ -40,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
           setState(() {
             _currentIndex = index;
