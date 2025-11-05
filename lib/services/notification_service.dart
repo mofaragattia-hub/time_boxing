@@ -61,14 +61,13 @@ class NotificationService {
     required String body,
     required int notificationId,
   }) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'timeboxing_channel',
-          'Timeboxing',
-          channelDescription: 'Channel for Timeboxing notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-        );
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'timeboxing_channel',
+      'Timeboxing',
+      channelDescription: 'Channel for Timeboxing notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
     const NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
     );
@@ -84,22 +83,16 @@ class NotificationService {
         tzDateTime,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: null,
       );
     } catch (e) {
-      // Fallback to approximate scheduling if exact alarms not permitted
+      // Fallback to inexact scheduling if exact scheduling fails
       await flutterLocalNotificationsPlugin.zonedSchedule(
         notificationId,
         title,
         body,
         tzDateTime,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexact,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: null,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     }  }
 }
