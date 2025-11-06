@@ -258,6 +258,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                           height: 48,
                           child: ElevatedButton.icon(
                             onPressed: () async {
+                              if (!mounted) return;
                               if (!_validateTimes(context)) return;
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
@@ -301,6 +302,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                             .remainder(100000),
                                       );
                                 } else {
+                                  if (!mounted) return;
                                   // Show warning for past times
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -334,6 +336,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   bool _validateTimes(BuildContext context) {
+    if (!mounted) return false;
     final bool isAr = Localizations.localeOf(context).languageCode == 'ar';
     if (_startTime == null || _endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(

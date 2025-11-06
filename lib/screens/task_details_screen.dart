@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:io' as io;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
+import 'package:timeboxing/providers/category_provider.dart';
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
 
@@ -18,21 +23,46 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Timer? _timer;
   int _remainingSeconds = 0;
   bool _isRunning = false;
+  StreamSubscription<dynamic>? _serviceSubscription;
 
   @override
   void initState() {
     super.initState();
     // initialize remaining seconds to full duration by default
     _remainingSeconds = widget.task.durationMinutes * 60;
-    // if task completed, timer stays hidden; if inProgress user can start/stop
-    if (widget.task.status == TaskStatus.inProgress) {
-      // leave as default; no persisted remaining in current model
+
+    // If task has persisted timer data, resume from that
+    final t = widget.task;
+    if (t.isTimerRunning && t.remainingSeconds != null) {
+      final start = t.timerStart ?? DateTime.now();
+      final elapsed = DateTime.now().difference(start).inSeconds;
+      final updated = (t.remainingSeconds! - elapsed);
+      if (updated <= 0) {
+        // timer finished while away
+        _remainingSeconds = 0;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Provider.of<TaskProvider>(context, listen: false)
+              .updateTaskStatus(t, TaskStatus.completed);
+        });
+      } else {
+        _remainingSeconds = updated;
+        _isRunning = true;
+        // Attach service listener if on mobile
+        final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
+        if (isMobile) {
+          _attachServiceListener();
+        } else {
+          // start local timer to count down while in-app
+          _startLocalTimer();
+        }
+      }
     }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _serviceSubscription?.cancel();
     super.dispose();
   }
 
@@ -41,10 +71,36 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     setState(() {
       _isRunning = true;
     });
+    final provider = Provider.of<TaskProvider>(context, listen: false);
     // mark as in progress
-    Provider.of<TaskProvider>(context, listen: false)
-        .updateTaskStatus(widget.task, TaskStatus.inProgress);
+    provider.updateTaskStatus(widget.task, TaskStatus.inProgress);
 
+    // persist timer fields on task
+    widget.task.isTimerRunning = true;
+    widget.task.timerStart = DateTime.now();
+    widget.task.remainingSeconds = _remainingSeconds;
+    provider.saveTask(widget.task);
+
+    // Use background service on mobile, otherwise local timer
+    final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
+    if (isMobile) {
+      final service = FlutterBackgroundService();
+      service.isRunning().then((running) async {
+        if (!running) await service.startService();
+        // small delay to ensure listener attachment in background
+        await Future.delayed(const Duration(milliseconds: 300));
+        _attachServiceListener();
+        service.invoke('startTimer', {
+          'duration': _remainingSeconds,
+          'title': widget.task.title,
+        });
+      });
+    } else {
+      _startLocalTimer();
+    }
+  }
+
+  void _startLocalTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) return;
@@ -53,14 +109,20 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           _remainingSeconds--;
         }
       });
+      // persist remaining occasionally
+      widget.task.remainingSeconds = _remainingSeconds;
+      Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
       if (_remainingSeconds <= 0) {
         _timer?.cancel();
         setState(() {
           _isRunning = false;
         });
-        // complete task
         Provider.of<TaskProvider>(context, listen: false)
             .updateTaskStatus(widget.task, TaskStatus.completed);
+        widget.task.isTimerRunning = false;
+        widget.task.remainingSeconds = 0;
+        widget.task.timerStart = null;
+        Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
       }
     });
   }
@@ -70,9 +132,49 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     setState(() {
       _isRunning = false;
     });
-    // optionally leave task as inProgress, or set back to pending — we'll leave as pending
+    // stop background service on mobile
+    final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
+    if (isMobile) {
+      FlutterBackgroundService().invoke('stopSelf');
+      _serviceSubscription?.cancel();
+    }
+
+    // persist task timer fields and set status back to pending
+    widget.task.isTimerRunning = false;
+    widget.task.remainingSeconds = _remainingSeconds;
+    widget.task.timerStart = null;
+    Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
+
     Provider.of<TaskProvider>(context, listen: false)
         .updateTaskStatus(widget.task, TaskStatus.pending);
+  }
+
+  void _attachServiceListener() {
+    _serviceSubscription?.cancel();
+    _serviceSubscription = FlutterBackgroundService().on('updateTimer').listen((event) {
+      if (!mounted || event == null) return;
+      final nextRemaining = event['remainingSeconds'] as int;
+      final isFinished = event['isFinished'] as bool? ?? false;
+      setState(() {
+        _remainingSeconds = nextRemaining;
+        if (_remainingSeconds <= 0) {
+          _isRunning = false;
+          _remainingSeconds = 0;
+        }
+      });
+      // persist remaining to task
+      widget.task.remainingSeconds = _remainingSeconds;
+      if (_remainingSeconds <= 0 || isFinished) {
+        widget.task.isTimerRunning = false;
+        widget.task.timerStart = null;
+        widget.task.remainingSeconds = 0;
+        Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
+        Provider.of<TaskProvider>(context, listen: false)
+            .updateTaskStatus(widget.task, TaskStatus.completed);
+      } else {
+        Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
+      }
+    });
   }
 
   String _formatDuration(int seconds) {
@@ -85,6 +187,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final task = widget.task;
+    final category = Provider.of<CategoryProvider>(context)
+        .categories
+        .firstWhereOrNull((c) => c.id == task.categoryId);
     return Scaffold(
       appBar: AppBar(
         title: Text(isArabic ? 'تفاصيل المهمة' : 'Task Details'),
@@ -95,6 +200,61 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
+            // Header card with title, category and actions
+            Card(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              elevation: 1.0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(task.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Row(children: [
+                            if (category != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: category.categoryColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(category.categoryIcon, color: category.categoryColor, size: 14),
+                                    const SizedBox(width: 6),
+                                    Text(category.name, style: TextStyle(color: category.categoryColor, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(width: 8),
+                            Chip(
+                              label: Text(_statusLabel(task.status, isArabic), style: const TextStyle(color: Colors.white)),
+                              backgroundColor: _statusColorFor(task.status),
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(_formatDateTime(task.createdAt), style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        IconButton(
+                          icon: const Icon(Icons.more_vert),
+                          onPressed: () => _showActionsSheet(context, task, isArabic),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
             _buildDetailItem(
               context,
               icon: Icons.title,
@@ -182,6 +342,102 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Color _statusColorFor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return Colors.grey;
+      case TaskStatus.inProgress:
+        return Colors.blue;
+      case TaskStatus.completed:
+        return Colors.green;
+      case TaskStatus.postponed:
+        return Colors.orange;
+    }
+  }
+
+  void _showActionsSheet(BuildContext context, Task task, bool isArabic) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline),
+                title: Text(isArabic ? 'تعيين كمكتملة' : 'Mark Completed'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.completed);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.play_arrow),
+                title: Text(isArabic ? 'تعيين قيد التنفيذ' : 'Mark In Progress'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.inProgress);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.schedule),
+                title: Text(isArabic ? 'تأجيل' : 'Postpone'),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.postponed);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: Text(isArabic ? 'حذف' : 'Delete', style: const TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.of(ctx).pop();
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (dctx) => AlertDialog(
+                      title: Text(isArabic ? 'حذف المهمة' : 'Delete task'),
+                      content: Text(isArabic ? 'هل أنت متأكد أنك تريد حذف هذه المهمة؟' : 'Are you sure you want to delete this task?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: Text(isArabic ? 'إلغاء' : 'Cancel')),
+                        TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: Text(isArabic ? 'حذف' : 'Delete')),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    final provider = Provider.of<TaskProvider>(context, listen: false);
+                    final deletedTask = Task(
+                      title: task.title,
+                      description: task.description,
+                      durationMinutes: task.durationMinutes,
+                      status: task.status,
+                      createdAt: task.createdAt,
+                      executedAt: task.executedAt,
+                    );
+                    await provider.deleteTask(task);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(isArabic ? 'تم حذف المهمة' : 'Task deleted'),
+                        action: SnackBarAction(
+                          label: isArabic ? 'تراجع' : 'UNDO',
+                          onPressed: () async {
+                            await provider.addTask(deletedTask);
+                          },
+                        ),
+                      ),
+                    );
+                    Navigator.of(context).maybePop();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

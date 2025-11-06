@@ -46,7 +46,7 @@ class CategoriesScreen extends StatelessWidget {
     final isEditing = category != null;
     
     String name = isEditing ? category.name : '';
-    int color = isEditing ? category.color : Colors.blue.value;
+    int color = isEditing ? category.color : Colors.blue.hashCode;
     String icon = isEditing ? category.icon : 'e8f9';
 
     await showDialog(

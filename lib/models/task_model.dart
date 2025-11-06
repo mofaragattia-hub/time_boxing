@@ -25,6 +25,16 @@ class Task extends HiveObject {
   @HiveField(6)
   String? categoryId;
 
+  // Timer persistence fields
+  @HiveField(7)
+  bool isTimerRunning = false;
+
+  @HiveField(8)
+  DateTime? timerStart;
+
+  @HiveField(9)
+  int? remainingSeconds;
+
   Task({
     required this.title,
     required this.description,

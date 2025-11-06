@@ -37,6 +37,11 @@ class TaskProvider with ChangeNotifier {
     _loadTasks();
   }
 
+  Future<void> saveTask(Task task) async {
+    await task.save();
+    _loadTasks();
+  }
+
   Future<void> deleteTask(Task task) async {
     await task.delete();
     _loadTasks();
