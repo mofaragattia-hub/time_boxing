@@ -36,6 +36,7 @@ class _TimerScreenState extends State<TimerScreen> {
     ) {
       if (!mounted || event == null) return;
       final nextRemaining = event['remainingSeconds'] as int;
+      final isFinished = event['isFinished'] as bool? ?? false;
       setState(() {
         _remainingSeconds = nextRemaining;
         if (_remainingSeconds <= 0) {
@@ -43,7 +44,7 @@ class _TimerScreenState extends State<TimerScreen> {
           _remainingSeconds = 0;
         }
       });
-      if (nextRemaining <= 0 && _selectedTask != null) {
+      if ((nextRemaining <= 0 || isFinished) && _selectedTask != null) {
         Provider.of<TaskProvider>(
           context,
           listen: false,

@@ -74,6 +74,7 @@ class NotificationService {
 
     final tzDateTime = tz.TZDateTime.from(scheduledDateTime, tz.local);
     
+    
     try {
       // Try exact scheduling first
       await flutterLocalNotificationsPlugin.zonedSchedule(
@@ -85,7 +86,7 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (e) {
-      // Fallback to inexact scheduling if exact scheduling fails
+      // Fallback to approximate scheduling if exact alarms not permitted
       await flutterLocalNotificationsPlugin.zonedSchedule(
         notificationId,
         title,
@@ -94,5 +95,6 @@ class NotificationService {
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
-    }  }
+    }
+  }
 }

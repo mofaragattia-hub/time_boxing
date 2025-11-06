@@ -63,6 +63,7 @@ void onStart(ServiceInstance service) async {
       } else {
         timer.cancel();
         _activeTimer = null;
+        service.invoke('updateTimer', {'remainingSeconds': 0, 'isFinished': true});
         final notificationService = NotificationService();
         notificationService.showNotification(
           'Time\'s up for $title!',
