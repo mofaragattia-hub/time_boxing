@@ -3,8 +3,12 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:timeboxing/models/task_model.dart';
+import 'package:timeboxing/models/category_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
-import 'package:timeboxing/screens/home_screen.dart';
+import 'package:timeboxing/providers/category_provider.dart';
+import 'package:timeboxing/screens/splash_screen.dart';
+import 'package:timeboxing/screens/categories_screen.dart';
+import 'package:timeboxing/screens/reports_screen.dart';
 import 'package:timeboxing/services/background_service.dart';
 import 'package:timeboxing/services/notification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -17,6 +21,7 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(TaskAdapter());
   Hive.registerAdapter(TaskStatusAdapter());
+  Hive.registerAdapter(TaskCategoryAdapter());
   await NotificationService().init();
   await initializeService();
 
@@ -41,8 +46,11 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => TaskProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => TaskProvider()),
+        ChangeNotifierProvider(create: (context) => CategoryProvider()),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         locale: _locale,
@@ -64,7 +72,11 @@ class _MyAppState extends State<MyApp> {
             shadowColor: Colors.black,
           ),
         ),
-        home: HomeScreen(onToggleLanguage: _toggleLanguage),
+        routes: {
+          '/categories': (context) => const CategoriesScreen(),
+          '/reports': (context) => const ReportsScreen(),
+        },
+        home: SplashScreen(onToggleLanguage: _toggleLanguage),
       ),
     );
   }

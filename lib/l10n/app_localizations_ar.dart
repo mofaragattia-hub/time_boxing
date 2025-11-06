@@ -16,4 +16,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get welcome => 'مرحباً بك في تيمبوكسينج';
+
+  @override
+  String get deleteSelectedTasks => 'حذف المهام المحددة';
+
+  @override
+  String deleteTasksConfirmation(Object count) {
+    return 'هل أنت متأكد من حذف $count مهام؟';
+  }
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get cancel => 'إلغاء';
 }

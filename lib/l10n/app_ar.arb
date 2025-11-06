@@ -1,5 +1,9 @@
 {
     "appTitle": "تيمبوكسينج",
     "hello": "أهلاً!",
-    "welcome": "مرحباً بك في تيمبوكسينج"
+    "welcome": "مرحباً بك في تيمبوكسينج",
+    "deleteSelectedTasks": "حذف المهام المحددة",
+    "deleteTasksConfirmation": "هل أنت متأكد من حذف {count} مهام؟",
+    "delete": "حذف",
+    "cancel": "إلغاء"
 }

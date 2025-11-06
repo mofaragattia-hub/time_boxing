@@ -1,7 +1,7 @@
 name: timeboxing
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.2+3
 
 environment:
   sdk: ^3.9.2
@@ -13,6 +13,9 @@ dependencies:
   provider: ^6.1.2
   hive: ^2.2.3
   hive_flutter: ^1.1.0
+  lottie: ^3.1.0
+  animated_text_kit: ^4.2.2
+  fl_chart: ^0.66.2
   flutter_local_notifications: ^19.5.0
   flutter_background_service: ^5.1.0
   flutter_background_service_android: ^6.3.1
@@ -26,6 +29,7 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   google_mobile_ads: ^6.0.0
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +51,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon.png
+    - assets/animations/
 
 flutter_icons:
   android: true

@@ -22,6 +22,9 @@ class Task extends HiveObject {
   @HiveField(5)
   DateTime? executedAt;
 
+  @HiveField(6)
+  String? categoryId;
+
   Task({
     required this.title,
     required this.description,
@@ -29,6 +32,7 @@ class Task extends HiveObject {
     this.status = TaskStatus.pending,
     required this.createdAt,
     this.executedAt,
+    this.categoryId,
   });
 }
 

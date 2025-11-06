@@ -10,8 +10,15 @@ Future<void> initializeService() async {
   await service.configure(
     androidConfiguration: AndroidConfiguration(
       onStart: onStart,
-      isForegroundMode: true,
+      isForegroundMode: false,
       autoStart: false,
+      // Provide a notification channel and initial notification required for
+      // foreground services on newer Android versions. This prevents crashes
+      // when the OS expects a foreground notification for the service.
+      notificationChannelId: 'timeboxing_service_channel',
+      initialNotificationTitle: 'Timeboxing Service',
+      initialNotificationContent: 'Timer service is running',
+      foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(
       onForeground: onStart,

@@ -5,6 +5,7 @@ import 'package:timeboxing/utils/ad_helper.dart';
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
 import 'package:timeboxing/services/notification_service.dart';
+import 'package:timeboxing/providers/category_provider.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -20,6 +21,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+  String? _selectedCategoryId;
 
   InterstitialAd? _interstitialAd;
 
@@ -109,6 +111,51 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                           maxLines: 3,
                           onSaved: (value) {
                             _description = value ?? '';
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Consumer<CategoryProvider>(
+                          builder: (context, categoryProvider, child) {
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedCategoryId,
+                              decoration: InputDecoration(
+                                labelText: isAr ? 'التصنيف' : 'Category',
+                                prefixIcon: _selectedCategoryId != null
+                                    ? Icon(
+                                        categoryProvider.categories
+                                            .firstWhere((c) => c.id == _selectedCategoryId)
+                                            .categoryIcon,
+                                        color: categoryProvider.categories
+                                            .firstWhere((c) => c.id == _selectedCategoryId)
+                                            .categoryColor,
+                                      )
+                                    : const Icon(Icons.category),
+                                filled: true,
+                              ),
+                              items: [
+                                DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text(isAr ? 'بدون تصنيف' : 'No Category'),
+                                ),
+                                ...categoryProvider.categories.map((category) {
+                                  return DropdownMenuItem<String>(
+                                    value: category.id,
+                                    child: Row(
+                                      children: [
+                                        Icon(category.categoryIcon, color: category.categoryColor),
+                                        const SizedBox(width: 8),
+                                        Text(category.name),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedCategoryId = value;
+                                });
+                              },
+                            );
                           },
                         ),
                         const SizedBox(height: 16),
@@ -231,6 +278,7 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                   description: _description,
                                   durationMinutes: durationMinutes,
                                   createdAt: startDateTime,
+                                  categoryId: _selectedCategoryId,
                                 );
                                 await Provider.of<TaskProvider>(
                                   context,

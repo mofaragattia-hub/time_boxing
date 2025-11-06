@@ -1,5 +1,9 @@
 {
     "appTitle": "Timeboxing",
     "hello": "Hello!",
-    "welcome": "Welcome to Timeboxing"
+    "welcome": "Welcome to Timeboxing",
+    "deleteSelectedTasks": "Delete Selected Tasks",
+    "deleteTasksConfirmation": "Are you sure you want to delete {count} tasks?",
+    "delete": "Delete",
+    "cancel": "Cancel"
 }

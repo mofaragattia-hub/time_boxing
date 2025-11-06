@@ -30,13 +30,22 @@ class TaskProvider with ChangeNotifier {
 
   Future<void> updateTaskStatus(Task task, TaskStatus status) async {
     task.status = status;
-    task.executedAt = DateTime.now();
+    if (status == TaskStatus.completed) {
+      task.executedAt = DateTime.now();
+    }
     await task.save();
     _loadTasks();
   }
 
   Future<void> deleteTask(Task task) async {
     await task.delete();
+    _loadTasks();
+  }
+
+  Future<void> deleteTasks(List<Task> tasks) async {
+    for (final task in tasks) {
+      await task.delete();
+    }
     _loadTasks();
   }
 

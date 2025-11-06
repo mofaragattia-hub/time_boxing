@@ -115,6 +115,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome to Timeboxing'**
   String get welcome;
+
+  /// No description provided for @deleteSelectedTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Selected Tasks'**
+  String get deleteSelectedTasks;
+
+  /// No description provided for @deleteTasksConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete {count} tasks?'**
+  String deleteTasksConfirmation(Object count);
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
 }
 
 class _AppLocalizationsDelegate
