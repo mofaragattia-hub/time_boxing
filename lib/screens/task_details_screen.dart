@@ -7,6 +7,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:timeboxing/providers/category_provider.dart';
+import 'package:timeboxing/utils/icon_registry.dart';
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
 
@@ -41,14 +42,17 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         // timer finished while away
         _remainingSeconds = 0;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Provider.of<TaskProvider>(context, listen: false)
-              .updateTaskStatus(t, TaskStatus.completed);
+          Provider.of<TaskProvider>(
+            context,
+            listen: false,
+          ).updateTaskStatus(t, TaskStatus.completed);
         });
       } else {
         _remainingSeconds = updated;
         _isRunning = true;
         // Attach service listener if on mobile
-        final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
+        final isMobile =
+            !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
         if (isMobile) {
           _attachServiceListener();
         } else {
@@ -117,8 +121,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         setState(() {
           _isRunning = false;
         });
-        Provider.of<TaskProvider>(context, listen: false)
-            .updateTaskStatus(widget.task, TaskStatus.completed);
+        Provider.of<TaskProvider>(
+          context,
+          listen: false,
+        ).updateTaskStatus(widget.task, TaskStatus.completed);
         widget.task.isTimerRunning = false;
         widget.task.remainingSeconds = 0;
         widget.task.timerStart = null;
@@ -145,13 +151,17 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     widget.task.timerStart = null;
     Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
 
-    Provider.of<TaskProvider>(context, listen: false)
-        .updateTaskStatus(widget.task, TaskStatus.pending);
+    Provider.of<TaskProvider>(
+      context,
+      listen: false,
+    ).updateTaskStatus(widget.task, TaskStatus.pending);
   }
 
   void _attachServiceListener() {
     _serviceSubscription?.cancel();
-    _serviceSubscription = FlutterBackgroundService().on('updateTimer').listen((event) {
+    _serviceSubscription = FlutterBackgroundService().on('updateTimer').listen((
+      event,
+    ) {
       if (!mounted || event == null) return;
       final nextRemaining = event['remainingSeconds'] as int;
       final isFinished = event['isFinished'] as bool? ?? false;
@@ -169,8 +179,10 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         widget.task.timerStart = null;
         widget.task.remainingSeconds = 0;
         Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
-        Provider.of<TaskProvider>(context, listen: false)
-            .updateTaskStatus(widget.task, TaskStatus.completed);
+        Provider.of<TaskProvider>(
+          context,
+          listen: false,
+        ).updateTaskStatus(widget.task, TaskStatus.completed);
       } else {
         Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
       }
@@ -187,9 +199,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final task = widget.task;
-    final category = Provider.of<CategoryProvider>(context)
-        .categories
-        .firstWhereOrNull((c) => c.id == task.categoryId);
+    final category = Provider.of<CategoryProvider>(
+      context,
+    ).categories.firstWhereOrNull((c) => c.id == task.categoryId);
     return Scaffold(
       appBar: AppBar(
         title: Text(isArabic ? 'تفاصيل المهمة' : 'Task Details'),
@@ -204,7 +216,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             Card(
               margin: const EdgeInsets.symmetric(vertical: 8.0),
               elevation: 1.0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Row(
@@ -214,43 +228,81 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(task.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 6),
-                          Row(children: [
-                            if (category != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: category.categoryColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(category.categoryIcon, color: category.categoryColor, size: 14),
-                                    const SizedBox(width: 6),
-                                    Text(category.name, style: TextStyle(color: category.categoryColor, fontSize: 12)),
-                                  ],
-                                ),
-                              ),
-                            const SizedBox(width: 8),
-                            Chip(
-                              label: Text(_statusLabel(task.status, isArabic), style: const TextStyle(color: Colors.white)),
-                              backgroundColor: _statusColorFor(task.status),
+                          Text(
+                            task.title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
-                          ]),
+                          ),
+                          const SizedBox(height: 6),
+                          // Use Wrap so the category pill and status chip wrap to the
+                          // next line when the available horizontal space is small.
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (category != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      kMaterialIconMap.containsKey(category.iconCodePoint)
+                                          ? Icon(kMaterialIconMap[category.iconCodePoint], color: category.categoryColor, size: 14)
+                                          : Text(
+                                              String.fromCharCode(category.iconCodePoint),
+                                              style: TextStyle(
+                                                fontFamily: 'MaterialIcons',
+                                                color: category.categoryColor,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        category.name,
+                                        style: TextStyle(
+                                          color: category.categoryColor,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              Chip(
+                                label: Text(
+                                  _statusLabel(task.status, isArabic),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                backgroundColor: _statusColorFor(task.status),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(_formatDateTime(task.createdAt), style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        Text(
+                          _formatDateTime(task.createdAt),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.more_vert),
-                          onPressed: () => _showActionsSheet(context, task, isArabic),
+                          onPressed: () =>
+                              _showActionsSheet(context, task, isArabic),
                         ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -301,7 +353,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 1.0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -309,12 +363,18 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     children: [
                       Text(
                         isArabic ? 'المؤقت' : 'Timer',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         _formatDuration(_remainingSeconds),
-                        style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -328,7 +388,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: _isRunning ? _stopTimer : null,
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
                             icon: const Icon(Icons.stop),
                             label: Text(isArabic ? 'إيقاف' : 'Stop'),
                           ),
@@ -371,15 +433,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 title: Text(isArabic ? 'تعيين كمكتملة' : 'Mark Completed'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.completed);
+                  await Provider.of<TaskProvider>(
+                    context,
+                    listen: false,
+                  ).updateTaskStatus(task, TaskStatus.completed);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.play_arrow),
-                title: Text(isArabic ? 'تعيين قيد التنفيذ' : 'Mark In Progress'),
+                title: Text(
+                  isArabic ? 'تعيين قيد التنفيذ' : 'Mark In Progress',
+                ),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.inProgress);
+                  await Provider.of<TaskProvider>(
+                    context,
+                    listen: false,
+                  ).updateTaskStatus(task, TaskStatus.inProgress);
                 },
               ),
               ListTile(
@@ -387,29 +457,48 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 title: Text(isArabic ? 'تأجيل' : 'Postpone'),
                 onTap: () async {
                   Navigator.of(ctx).pop();
-                  await Provider.of<TaskProvider>(context, listen: false).updateTaskStatus(task, TaskStatus.postponed);
+                  await Provider.of<TaskProvider>(
+                    context,
+                    listen: false,
+                  ).updateTaskStatus(task, TaskStatus.postponed);
                 },
               ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
-                title: Text(isArabic ? 'حذف' : 'Delete', style: const TextStyle(color: Colors.red)),
+                title: Text(
+                  isArabic ? 'حذف' : 'Delete',
+                  style: const TextStyle(color: Colors.red),
+                ),
                 onTap: () async {
                   Navigator.of(ctx).pop();
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (dctx) => AlertDialog(
                       title: Text(isArabic ? 'حذف المهمة' : 'Delete task'),
-                      content: Text(isArabic ? 'هل أنت متأكد أنك تريد حذف هذه المهمة؟' : 'Are you sure you want to delete this task?'),
+                      content: Text(
+                        isArabic
+                            ? 'هل أنت متأكد أنك تريد حذف هذه المهمة؟'
+                            : 'Are you sure you want to delete this task?',
+                      ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: Text(isArabic ? 'إلغاء' : 'Cancel')),
-                        TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: Text(isArabic ? 'حذف' : 'Delete')),
+                        TextButton(
+                          onPressed: () => Navigator.of(dctx).pop(false),
+                          child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(dctx).pop(true),
+                          child: Text(isArabic ? 'حذف' : 'Delete'),
+                        ),
                       ],
                     ),
                   );
 
                   if (confirmed == true) {
-                    final provider = Provider.of<TaskProvider>(context, listen: false);
+                    final provider = Provider.of<TaskProvider>(
+                      context,
+                      listen: false,
+                    );
                     final deletedTask = Task(
                       title: task.title,
                       description: task.description,
@@ -421,7 +510,9 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     await provider.deleteTask(task);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(isArabic ? 'تم حذف المهمة' : 'Task deleted'),
+                        content: Text(
+                          isArabic ? 'تم حذف المهمة' : 'Task deleted',
+                        ),
                         action: SnackBarAction(
                           label: isArabic ? 'تراجع' : 'UNDO',
                           onPressed: () async {

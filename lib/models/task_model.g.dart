@@ -24,13 +24,16 @@ class TaskAdapter extends TypeAdapter<Task> {
       createdAt: fields[4] as DateTime,
       executedAt: fields[5] as DateTime?,
       categoryId: fields[6] as String?,
-    );
+    )
+      ..isTimerRunning = fields[7] as bool
+      ..timerStart = fields[8] as DateTime?
+      ..remainingSeconds = fields[9] as int?;
   }
 
   @override
   void write(BinaryWriter writer, Task obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -44,7 +47,13 @@ class TaskAdapter extends TypeAdapter<Task> {
       ..writeByte(5)
       ..write(obj.executedAt)
       ..writeByte(6)
-      ..write(obj.categoryId);
+      ..write(obj.categoryId)
+      ..writeByte(7)
+      ..write(obj.isTimerRunning)
+      ..writeByte(8)
+      ..write(obj.timerStart)
+      ..writeByte(9)
+      ..write(obj.remainingSeconds);
   }
 
   @override

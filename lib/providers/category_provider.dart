@@ -30,27 +30,27 @@ class CategoryProvider with ChangeNotifier {
     final defaultCategories = [
       TaskCategory(
         id: 'work',
-        name: 'Work | عمل',
+        name: 'Work',
         color: 0xFF2196F3, // Blue
-        icon: 'e8f9', // work icon
+        icon: 0xe8f9, // work icon
       ),
       TaskCategory(
         id: 'personal',
-        name: 'Personal | شخصي',
+        name: 'Personal',
         color: 0xFF4CAF50, // Green
-        icon: 'e7fd', // person icon
+        icon: 0xe7fd, // person icon
       ),
       TaskCategory(
         id: 'study',
-        name: 'Study | دراسة',
+        name: 'Study',
         color: 0xFFFFC107, // Amber
-        icon: 'e80c', // school icon
+        icon: 0xe80c, // school icon
       ),
       TaskCategory(
         id: 'health',
-        name: 'Health | صحة',
+        name: 'Health',
         color: 0xFFF44336, // Red
-        icon: 'e3f6', // health icon
+        icon: 0xe3f6, // health icon
       ),
     ];
 

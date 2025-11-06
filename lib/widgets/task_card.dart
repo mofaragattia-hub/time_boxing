@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/category_provider.dart';
 import 'package:timeboxing/screens/task_details_screen.dart';
+import 'package:timeboxing/utils/icon_registry.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -64,32 +65,45 @@ class TaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            task.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ),
-                        if (category != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: category.categoryColor,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(category.categoryIcon, color: category.categoryColor, size: 14),
-                                const SizedBox(width: 6),
-                                Text(category.name, style: TextStyle(color: category.categoryColor, fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  task.title,
+                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                                ),
+                                                if (category != null)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(top: 4.0),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(20),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          // Prefer const IconData from registry so the glyph is
+                                                          // preserved during tree-shaking; fall back to a
+                                                          // Text glyph if the codepoint isn't registered.
+                                                          kMaterialIconMap.containsKey(category.icon)
+                                                              ? Icon(kMaterialIconMap[category.icon], color: category.categoryColor, size: 14)
+                                                              : Text(
+                                                                  String.fromCharCode(category.icon),
+                                                                  style: TextStyle(
+                                                                    fontFamily: 'MaterialIcons',
+                                                                    color: category.categoryColor,
+                                                                    fontSize: 14,
+                                                                  ),
+                                                                ),
+                                                          const SizedBox(width: 6),
+                                                          Text(category.name, style: TextStyle(color: category.categoryColor, fontSize: 12)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),                    const SizedBox(height: 6),
                     Text(
                       task.description,
                       maxLines: 2,

@@ -15,7 +15,7 @@ class TaskCategory extends HiveObject {
   int color;
 
   @HiveField(3)
-  String icon;
+  int icon;
 
   TaskCategory({
     required this.id,
@@ -25,9 +25,7 @@ class TaskCategory extends HiveObject {
   });
 
   Color get categoryColor => Color(color);
-
-  IconData get categoryIcon => IconData(
-        int.parse(icon, radix: 16),
-        fontFamily: 'MaterialIcons',
-      );
+  /// The raw code point for the icon. Convert to [IconData] in widgets by
+  /// using `Icon(IconData(category.icon, fontFamily: 'MaterialIcons'))`.
+  int get iconCodePoint => icon;
 }

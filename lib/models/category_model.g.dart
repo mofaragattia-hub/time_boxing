@@ -8,7 +8,7 @@ part of 'category_model.dart';
 
 class TaskCategoryAdapter extends TypeAdapter<TaskCategory> {
   @override
-  final typeId = 3;
+  final int typeId = 3;
 
   @override
   TaskCategory read(BinaryReader reader) {
@@ -20,7 +20,7 @@ class TaskCategoryAdapter extends TypeAdapter<TaskCategory> {
       id: fields[0] as String,
       name: fields[1] as String,
       color: fields[2] as int,
-      icon: fields[3] as String,
+      icon: fields[3] as int,
     );
   }
 

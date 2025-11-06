@@ -6,6 +6,7 @@ import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
 import 'package:timeboxing/services/notification_service.dart';
 import 'package:timeboxing/providers/category_provider.dart';
+import 'package:timeboxing/utils/icon_registry.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -121,14 +122,22 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                               decoration: InputDecoration(
                                 labelText: isAr ? 'التصنيف' : 'Category',
                                 prefixIcon: _selectedCategoryId != null
-                                    ? Icon(
-                                        categoryProvider.categories
-                                            .firstWhere((c) => c.id == _selectedCategoryId)
-                                            .categoryIcon,
-                                        color: categoryProvider.categories
-                                            .firstWhere((c) => c.id == _selectedCategoryId)
-                                            .categoryColor,
-                                      )
+                                    ? Builder(builder: (ctx) {
+                                        final selected = categoryProvider.categories.firstWhere((c) => c.id == _selectedCategoryId);
+                                        return kMaterialIconMap.containsKey(selected.iconCodePoint)
+                                            ? Icon(kMaterialIconMap[selected.iconCodePoint], color: selected.categoryColor)
+                                            : Padding(
+                                                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                                                child: Text(
+                                                  String.fromCharCode(selected.iconCodePoint),
+                                                  style: TextStyle(
+                                                    fontFamily: 'MaterialIcons',
+                                                    color: selected.categoryColor,
+                                                    fontSize: 20,
+                                                  ),
+                                                ),
+                                              );
+                                      })
                                     : const Icon(Icons.category),
                                 filled: true,
                               ),
@@ -142,7 +151,9 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                     value: category.id,
                                     child: Row(
                                       children: [
-                                        Icon(category.categoryIcon, color: category.categoryColor),
+                    kMaterialIconMap.containsKey(category.iconCodePoint)
+                      ? Icon(kMaterialIconMap[category.iconCodePoint], color: category.categoryColor)
+                      : Text(String.fromCharCode(category.iconCodePoint), style: TextStyle(fontFamily: 'MaterialIcons', color: category.categoryColor, fontSize: 18)),
                                         const SizedBox(width: 8),
                                         Text(category.name),
                                       ],

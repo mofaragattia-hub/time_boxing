@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:timeboxing/models/category_model.dart';
 import 'package:timeboxing/providers/category_provider.dart';
+import 'package:timeboxing/utils/icon_registry.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -20,10 +21,12 @@ class CategoriesScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final category = categoryProvider.categories[index];
               return ListTile(
-                leading: Icon(
-                  category.categoryIcon,
-                  color: category.categoryColor,
-                ),
+                leading: kMaterialIconMap.containsKey(category.iconCodePoint)
+                    ? Icon(kMaterialIconMap[category.iconCodePoint], color: category.categoryColor)
+                    : Text(
+                        String.fromCharCode(category.iconCodePoint),
+                        style: TextStyle(fontFamily: 'MaterialIcons', color: category.categoryColor, fontSize: 20),
+                      ),
                 title: Text(category.name),
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
@@ -47,7 +50,7 @@ class CategoriesScreen extends StatelessWidget {
     
     String name = isEditing ? category.name : '';
     int color = isEditing ? category.color : Colors.blue.hashCode;
-    String icon = isEditing ? category.icon : 'e8f9';
+    int icon = isEditing ? category.icon : 0xe8f9;
 
     await showDialog(
       context: context,
