@@ -5,6 +5,8 @@ import 'package:timeboxing/l10n/app_localizations.dart';
 import 'package:timeboxing/screens/dashboard_screen.dart';
 import 'package:timeboxing/screens/tasks_screen.dart';
 import 'package:timeboxing/screens/reports_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:in_app_update/in_app_update.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onToggleLanguage});
@@ -40,6 +42,18 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     )..load();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        await InAppUpdate.performImmediateUpdate();
+      }
+    } catch (e) {
+      // Ignore errors
+    }
   }
 
   @override
@@ -61,13 +75,25 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DrawerHeader(
-                decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(t.appTitle, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      t.appTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text(isArabic ? 'مرحباً' : 'Welcome', style: const TextStyle(color: Colors.white70)),
+                    Text(
+                      isArabic ? 'مرحباً' : 'Welcome',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                   ],
                 ),
               ),
@@ -110,6 +136,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.lightbulb_outline),
+                title: Text(isArabic ? 'نصائح وإرشادات' : 'Tips & Insights'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushNamed(context, '/tips');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share),
+                title: Text(isArabic ? 'مشاركة التطبيق' : 'Share App'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  // ignore: deprecated_member_use
+                  Share.share(
+                    isArabic
+                        ? 'جرب هذا التطبيق الرائع لإدارة الوقت: https://play.google.com/store/apps/details?id=com.mofarag.timeboxing'
+                        : 'Check out this amazing time management app: https://play.google.com/store/apps/details?id=com.mofarag.timeboxing',
+                  );
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.language),
                 title: Text(isArabic ? 'اللغة' : 'Language'),
                 onTap: () {
@@ -120,7 +167,10 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: Text(isArabic ? 'الإصدار 0.1.2' : 'Version 0.1.2', style: const TextStyle(color: Colors.black54)),
+                child: Text(
+                  isArabic ? 'الإصدار 0.1.4' : 'Version 0.1.4',
+                  style: const TextStyle(color: Colors.black54),
+                ),
               ),
             ],
           ),
@@ -157,6 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             },
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            selectedIndex: _currentIndex,
             destinations: [
               NavigationDestination(
                 icon: const Icon(Icons.dashboard_outlined),
@@ -176,12 +227,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           if (_bannerAd != null)
-            SafeArea(
-              child: SizedBox(
-                width: _bannerAd!.size.width.toDouble(),
-                height: _bannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
-              ),
+            Container(
+              alignment: Alignment.center,
+              width: _bannerAd!.size.width.toDouble(),
+              height: _bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: _bannerAd!),
             ),
         ],
       ),

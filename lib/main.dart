@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'package:timeboxing/models/task_model.dart';
 import 'package:timeboxing/models/category_model.dart';
 import 'package:timeboxing/providers/task_provider.dart';
@@ -9,21 +13,31 @@ import 'package:timeboxing/providers/category_provider.dart';
 import 'package:timeboxing/screens/splash_screen.dart';
 import 'package:timeboxing/screens/categories_screen.dart';
 import 'package:timeboxing/screens/reports_screen.dart';
-import 'package:timeboxing/services/background_service.dart';
+import 'package:timeboxing/screens/tips_insights_screen.dart';
 import 'package:timeboxing/services/notification_service.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Enable Edge-to-Edge mode
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      statusBarColor: Colors.transparent,
+    ),
+  );
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   await MobileAds.instance.initialize();
   await Hive.initFlutter();
   Hive.registerAdapter(TaskAdapter());
   Hive.registerAdapter(TaskStatusAdapter());
   Hive.registerAdapter(TaskCategoryAdapter());
   await NotificationService().init();
-  await initializeService();
+
+  // Request notification permissions
+  await Permission.notification.request();
 
   runApp(const MyApp());
 }
@@ -40,7 +54,9 @@ class _MyAppState extends State<MyApp> {
 
   void _toggleLanguage() {
     setState(() {
-      _locale = _locale.languageCode == 'en' ? const Locale('ar') : const Locale('en');
+      _locale = _locale.languageCode == 'en'
+          ? const Locale('ar')
+          : const Locale('en');
     });
   }
 
@@ -75,6 +91,7 @@ class _MyAppState extends State<MyApp> {
         routes: {
           '/categories': (context) => const CategoriesScreen(),
           '/reports': (context) => const ReportsScreen(),
+          '/tips': (context) => const TipsInsightsScreen(),
         },
         home: SplashScreen(onToggleLanguage: _toggleLanguage),
       ),

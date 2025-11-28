@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'dart:io' as io;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:timeboxing/providers/category_provider.dart';
@@ -24,7 +21,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   Timer? _timer;
   int _remainingSeconds = 0;
   bool _isRunning = false;
-  StreamSubscription<dynamic>? _serviceSubscription;
 
   @override
   void initState() {
@@ -50,15 +46,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       } else {
         _remainingSeconds = updated;
         _isRunning = true;
-        // Attach service listener if on mobile
-        final isMobile =
-            !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
-        if (isMobile) {
-          _attachServiceListener();
-        } else {
-          // start local timer to count down while in-app
-          _startLocalTimer();
-        }
+        _startLocalTimer();
       }
     }
   }
@@ -66,7 +54,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _serviceSubscription?.cancel();
     super.dispose();
   }
 
@@ -85,23 +72,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     widget.task.remainingSeconds = _remainingSeconds;
     provider.saveTask(widget.task);
 
-    // Use background service on mobile, otherwise local timer
-    final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
-    if (isMobile) {
-      final service = FlutterBackgroundService();
-      service.isRunning().then((running) async {
-        if (!running) await service.startService();
-        // small delay to ensure listener attachment in background
-        await Future.delayed(const Duration(milliseconds: 300));
-        _attachServiceListener();
-        service.invoke('startTimer', {
-          'duration': _remainingSeconds,
-          'title': widget.task.title,
-        });
-      });
-    } else {
-      _startLocalTimer();
-    }
+    _startLocalTimer();
   }
 
   void _startLocalTimer() {
@@ -138,12 +109,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
     setState(() {
       _isRunning = false;
     });
-    // stop background service on mobile
-    final isMobile = !kIsWeb && (io.Platform.isAndroid || io.Platform.isIOS);
-    if (isMobile) {
-      FlutterBackgroundService().invoke('stopSelf');
-      _serviceSubscription?.cancel();
-    }
 
     // persist task timer fields and set status back to pending
     widget.task.isTimerRunning = false;
@@ -155,38 +120,6 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       context,
       listen: false,
     ).updateTaskStatus(widget.task, TaskStatus.pending);
-  }
-
-  void _attachServiceListener() {
-    _serviceSubscription?.cancel();
-    _serviceSubscription = FlutterBackgroundService().on('updateTimer').listen((
-      event,
-    ) {
-      if (!mounted || event == null) return;
-      final nextRemaining = event['remainingSeconds'] as int;
-      final isFinished = event['isFinished'] as bool? ?? false;
-      setState(() {
-        _remainingSeconds = nextRemaining;
-        if (_remainingSeconds <= 0) {
-          _isRunning = false;
-          _remainingSeconds = 0;
-        }
-      });
-      // persist remaining to task
-      widget.task.remainingSeconds = _remainingSeconds;
-      if (_remainingSeconds <= 0 || isFinished) {
-        widget.task.isTimerRunning = false;
-        widget.task.timerStart = null;
-        widget.task.remainingSeconds = 0;
-        Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
-        Provider.of<TaskProvider>(
-          context,
-          listen: false,
-        ).updateTaskStatus(widget.task, TaskStatus.completed);
-      } else {
-        Provider.of<TaskProvider>(context, listen: false).saveTask(widget.task);
-      }
-    });
   }
 
   String _formatDuration(int seconds) {
@@ -253,10 +186,19 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      kMaterialIconMap.containsKey(category.iconCodePoint)
-                                          ? Icon(kMaterialIconMap[category.iconCodePoint], color: category.categoryColor, size: 14)
+                                      kMaterialIconMap.containsKey(
+                                            category.iconCodePoint,
+                                          )
+                                          ? Icon(
+                                              kMaterialIconMap[category
+                                                  .iconCodePoint],
+                                              color: category.categoryColor,
+                                              size: 14,
+                                            )
                                           : Text(
-                                              String.fromCharCode(category.iconCodePoint),
+                                              String.fromCharCode(
+                                                category.iconCodePoint,
+                                              ),
                                               style: TextStyle(
                                                 fontFamily: 'MaterialIcons',
                                                 color: category.categoryColor,
@@ -495,6 +437,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                   );
 
                   if (confirmed == true) {
+                    if (!mounted) return;
                     final provider = Provider.of<TaskProvider>(
                       context,
                       listen: false,
@@ -508,6 +451,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       executedAt: task.executedAt,
                     );
                     await provider.deleteTask(task);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(

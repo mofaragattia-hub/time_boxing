@@ -94,7 +94,9 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return isAr ? 'يرجى إدخال عنوان' : 'Please enter a title';
+                              return isAr
+                                  ? 'يرجى إدخال عنوان'
+                                  : 'Please enter a title';
                             }
                             return null;
                           },
@@ -122,38 +124,76 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                               decoration: InputDecoration(
                                 labelText: isAr ? 'التصنيف' : 'Category',
                                 prefixIcon: _selectedCategoryId != null
-                                    ? Builder(builder: (ctx) {
-                                        final selected = categoryProvider.categories.firstWhere((c) => c.id == _selectedCategoryId);
-                                        return kMaterialIconMap.containsKey(selected.iconCodePoint)
-                                            ? Icon(kMaterialIconMap[selected.iconCodePoint], color: selected.categoryColor)
-                                            : Padding(
-                                                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                                                child: Text(
-                                                  String.fromCharCode(selected.iconCodePoint),
-                                                  style: TextStyle(
-                                                    fontFamily: 'MaterialIcons',
-                                                    color: selected.categoryColor,
-                                                    fontSize: 20,
-                                                  ),
-                                                ),
+                                    ? Builder(
+                                        builder: (ctx) {
+                                          final selected = categoryProvider
+                                              .categories
+                                              .firstWhere(
+                                                (c) =>
+                                                    c.id == _selectedCategoryId,
                                               );
-                                      })
+                                          return kMaterialIconMap.containsKey(
+                                                selected.iconCodePoint,
+                                              )
+                                              ? Icon(
+                                                  kMaterialIconMap[selected
+                                                      .iconCodePoint],
+                                                  color: selected.categoryColor,
+                                                )
+                                              : Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        left: 8.0,
+                                                        right: 8.0,
+                                                      ),
+                                                  child: Text(
+                                                    String.fromCharCode(
+                                                      selected.iconCodePoint,
+                                                    ),
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'MaterialIcons',
+                                                      color: selected
+                                                          .categoryColor,
+                                                      fontSize: 20,
+                                                    ),
+                                                  ),
+                                                );
+                                        },
+                                      )
                                     : const Icon(Icons.category),
                                 filled: true,
                               ),
                               items: [
                                 DropdownMenuItem<String>(
                                   value: null,
-                                  child: Text(isAr ? 'بدون تصنيف' : 'No Category'),
+                                  child: Text(
+                                    isAr ? 'بدون تصنيف' : 'No Category',
+                                  ),
                                 ),
                                 ...categoryProvider.categories.map((category) {
                                   return DropdownMenuItem<String>(
                                     value: category.id,
                                     child: Row(
                                       children: [
-                    kMaterialIconMap.containsKey(category.iconCodePoint)
-                      ? Icon(kMaterialIconMap[category.iconCodePoint], color: category.categoryColor)
-                      : Text(String.fromCharCode(category.iconCodePoint), style: TextStyle(fontFamily: 'MaterialIcons', color: category.categoryColor, fontSize: 18)),
+                                        kMaterialIconMap.containsKey(
+                                              category.iconCodePoint,
+                                            )
+                                            ? Icon(
+                                                kMaterialIconMap[category
+                                                    .iconCodePoint],
+                                                color: category.categoryColor,
+                                              )
+                                            : Text(
+                                                String.fromCharCode(
+                                                  category.iconCodePoint,
+                                                ),
+                                                style: TextStyle(
+                                                  fontFamily: 'MaterialIcons',
+                                                  color: category.categoryColor,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
                                         const SizedBox(width: 8),
                                         Text(category.name),
                                       ],
@@ -215,10 +255,12 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 icon: const Icon(Icons.play_circle_fill),
                                 label: Text(
                                   _startTime == null
-                                      ? (isAr ? 'اختر وقت البدء' : 'Pick start time')
+                                      ? (isAr
+                                            ? 'اختر وقت البدء'
+                                            : 'Pick start time')
                                       : (isAr
-                                          ? 'البدء: ${_startTime!.format(context)}'
-                                          : 'Start: ${_startTime!.format(context)}'),
+                                            ? 'البدء: ${_startTime!.format(context)}'
+                                            : 'Start: ${_startTime!.format(context)}'),
                                 ),
                               ),
                             ),
@@ -240,10 +282,12 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                 icon: const Icon(Icons.stop_circle),
                                 label: Text(
                                   _endTime == null
-                                      ? (isAr ? 'اختر وقت الانتهاء' : 'Pick end time')
+                                      ? (isAr
+                                            ? 'اختر وقت الانتهاء'
+                                            : 'Pick end time')
                                       : (isAr
-                                          ? 'الانتهاء: ${_endTime!.format(context)}'
-                                          : 'End: ${_endTime!.format(context)}'),
+                                            ? 'الانتهاء: ${_endTime!.format(context)}'
+                                            : 'End: ${_endTime!.format(context)}'),
                                 ),
                               ),
                             ),
@@ -253,7 +297,9 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                         Builder(
                           builder: (context) {
                             final info = _startTime == null || _endTime == null
-                                ? (isAr ? 'لم يتم اختيار وقت' : 'No time selected')
+                                ? (isAr
+                                      ? 'لم يتم اختيار وقت'
+                                      : 'No time selected')
                                 : _formatDurationLabel(context);
                             return Align(
                               alignment: Alignment.centerLeft,
@@ -306,26 +352,30 @@ class AddTaskScreenState extends State<AddTaskScreen> {
                                   await NotificationService()
                                       .scheduleNotification(
                                         scheduledDateTime: startDateTime,
-                                        title: isAr ? 'تذكير بالمهمة' : 'Task reminder',
+                                        title: isAr
+                                            ? 'تذكير بالمهمة'
+                                            : 'Task reminder',
                                         body: _title,
                                         notificationId: startDateTime
                                             .millisecondsSinceEpoch
                                             .remainder(100000),
                                       );
                                 } else {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   // Show warning for past times
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(isAr
-                                          ? 'وقت البدء في الماضي - لن يتم جدولة إشعار'
-                                          : 'Start time is in the past - no notification scheduled'),
+                                      content: Text(
+                                        isAr
+                                            ? 'وقت البدء في الماضي - لن يتم جدولة إشعار'
+                                            : 'Start time is in the past - no notification scheduled',
+                                      ),
                                       backgroundColor: Colors.orange,
                                     ),
                                   );
                                 }
 
-                                if (!mounted) return;
+                                if (!context.mounted) return;
 
                                 Navigator.of(context).pop();
                               }
@@ -351,7 +401,13 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     final bool isAr = Localizations.localeOf(context).languageCode == 'ar';
     if (_startTime == null || _endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isAr ? 'يرجى اختيار وقتي البدء والانتهاء' : 'Please select start and end times')),
+        SnackBar(
+          content: Text(
+            isAr
+                ? 'يرجى اختيار وقتي البدء والانتهاء'
+                : 'Please select start and end times',
+          ),
+        ),
       );
       return false;
     }
@@ -359,7 +415,13 @@ class AddTaskScreenState extends State<AddTaskScreen> {
     final end = _mergeDateAndTime(_selectedDate, _endTime!);
     if (!end.isAfter(start)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isAr ? 'يجب أن يكون وقت الانتهاء بعد وقت البدء' : 'End time must be after start time')),
+        SnackBar(
+          content: Text(
+            isAr
+                ? 'يجب أن يكون وقت الانتهاء بعد وقت البدء'
+                : 'End time must be after start time',
+          ),
+        ),
       );
       return false;
     }
